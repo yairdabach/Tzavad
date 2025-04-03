@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ניהול מלאי</title>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
+    <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="small"></script>
+    <input type="hidden" id="cirlNumber" value=""/>
+    <style>
+        @import "tailwindcss";
+        body {
+            font-family: 'Assistant', sans-serif;
+        }
+
+        .circular-progress {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(#4f46e5 0%, #d1d5db 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circular-progress::before {
+            content: '';
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background-color: white;
+        }
+
+        .circular-progress .progress-value {
+            position: relative;
+            font-size: 3rem;
+            font-weight: 600;
+            color: #333;
+        }
+        /* אפקט פתיחת החלון הצף */
+        .modal-open {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!--<img id="E404" style="visibility: hidden;" src="404.jpg" alt="404!" width="50%" height="50" >-->
+    <div id="loading" class="flex justify-center items-center" style="display: none;">
+        <img src="loading.gif" alt="טעינה..." width="150" height="150" />
+    </div>
+    <div id="view" class="max-w-8xl w-full mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
+        <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-lg mx-auto border border-blue-100">
+            <div class="space-y-6 sm:space-y-8">
+                <div class="space-y-1">
+                    <h1 id="DesTitle" class="text-xl font-bold text-indigo-900 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">אוזניות אלחוטיות פרימיום</h1>
+                    <p id="catalogNumText" class="text-sm font-mono text-gray-500" dir="rtl">מק"ט: WH-1000XM4</p>
+                </div>
+
+                <div class="flex flex-col items-center space-y-4 sm:space-y-6 relative py-4">
+                    <div class="circular-progress" id="circularProgress">
+                        <span class="progress-value" id="stockCount">0</span>
+                    </div>
+                    
+                    <!-- כפתורי מינוס והוספה -->
+                    <div class="flex items-center justify-between space-x-4 w-full max-w-sm mx-auto">
+                        <div class="flex justify-center space-x-4">
+                            <button class="!rounded-full w-14 h-14 flex items-center justify-center bg-gradient-to-r from-blue-100 to-teal-100 hover:from-blue-200 hover:to-teal-200 text-blue-600 transition-colors active:scale-95 shadow-sm" onclick="openModal()">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+
+                        <button class="!rounded-full w-14 h-14 flex items-center justify-center bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-600 transition-colors active:scale-95 shadow-sm" onclick="updateStock(-1)">
+                            <span>-1</span>
+                        </button>
+                    
+                        <!-- כפתורי מינוס ב-5 וב-10 -->
+                        <button class="!rounded-full w-14 h-14 flex items-center justify-center bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-600 transition-colors active:scale-95 shadow-sm" onclick="updateStock(-5)">
+                            <span>-5</span>
+                        </button>
+                    
+                        <button class="!rounded-full w-14 h-14 flex items-center justify-center bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-600 transition-colors active:scale-95 shadow-sm" onclick="updateStock(-10)">
+                            <span>-10</span>
+                        </button>
+                    </div>
+                    
+                </div>
+                
+                <div onclcick="clickUpdateNeedToOrder();" class="space-y-2">
+
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <i class="fas fa-circle-info"></i>
+                        <a id="setNeedToOrder" style="text-decoration:underline; padding-right: 5px;">  סמן להזמנה  </a>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    
+    <!-- חלון צף (Modal) -->
+    <div id="modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center hidden">
+        <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-lg p-6 sm:p-8 w-full max-w-lg mx-auto border border-blue-100 transform scale-95 opacity-0 transition-all duration-300">
+            <h2 class="text-xl font-bold text-indigo-900 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 text-center">
+                עדכון כמות קשיחים ידנית
+            </h2>
+    
+            <div class="flex flex-col items-center space-y-6 sm:space-y-8 relative py-4">
+                <input type="number" id="inputCount" class="w-32 sm:w-40 text-center border-gray-200 rounded-xl focus:ring-purple-500 focus:border-purple-500 text-lg font-semibold bg-white/50 p-2 shadow-md" value="24" min="0" max="100"/>
+    
+                <div class="flex items-center justify-between space-x-4 w-full max-w-sm mx-auto">
+                    <button class="w-24 py-2 rounded-xl text-white font-semibold bg-red-500 hover:bg-red-600 transition" onclick="closeModal()">סגור</button>
+                    <button class="w-24 py-2 rounded-xl text-white font-semibold bg-green-500 hover:bg-green-600 transition" onclick="updateModalValue()">עדכן</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // קבלת נתון מהעמוד
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const catalogNumber = urlParams.get('cirlNumber');
+        const pdflink = urlParams.get('pdflink');
+        const API_URL = "https://script.google.com/macros/s/AKfycbzgguV9ymiUBkxhmennGl1srf1jPP5jjUETXwFVPTO1NpKaZYVwT_fq0SOvZxaOlzvu/exec";
+        idealAmount = 0;
+        amount = 0 ;
+        minAmount = 0;
+
+        window.onload = function() {
+            const loadingElement = document.getElementById('loading');  // אלמנט טעינה
+            const viewElement = document.getElementById('view');  // התוכן של הדף
+
+            // הצגת גיף טעינה
+            function showLoading() {
+                if (loadingElement) {
+                    loadingElement.style.display = 'flex';  // הצגת הגיף
+                }
+                if (viewElement) {
+                    viewElement.style.display = 'none';  // הסתרת התוכן
+                }
+            }
+
+            // הסתרת גיף טעינה
+            function hideLoading() {
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';  // הסתרת הגיף
+                }
+                if (viewElement) {
+                    viewElement.style.display = 'block';  // הצגת התוכן
+                }
+            }
+
+            async function setPageByCatalogNum(catalogNum) {
+                showLoading();  // הצגת טעינה
+
+                const data = await fetchBolt(catalogNum);
+                hideLoading();  // הסתרת טעינה
+
+                if (data) {
+                    amount = data.screwsAmount;
+                    idealAmount = data.idealAmount;
+                    minAmount = data.minAmount;
+                    document.getElementById("DesTitle").innerText = data.description;
+                    document.getElementById("catalogNumText").innerText = 'מסח"א : ' + data.catalogNumber;
+                    document.getElementById("stockCount").innerText = data.screwsAmount;
+                    document.getElementById("inputCount").value = data.screwsAmount;
+                    updateProgressBar(data.screwsAmount);  // עדכון ה-ProgressBar
+                    
+                }
+            }
+
+            // הפעלת הפונקציה עם דוגמת קטלוג
+            setPageByCatalogNum(catalogNumber);  // דוגמה, תוכל לשים את המספר שאתה רוצה
+        };
+
+
+        function openModal() {
+            let modal = document.getElementById("modal");
+            let modalContent = modal.querySelector("div");
+
+            modal.classList.remove("hidden");
+            setTimeout(() => {
+                modalContent.classList.add("modal-open"); 
+            }, 50); // עיכוב קצר למען אפקט חלק
+            document.getElementById("inputCountModal").value = document.getElementById("inputCount").value; // סנכרון הערכים
+        }
+
+        // סגירת החלון הצף עם אנימציה
+        function closeModal() {
+            let modal = document.getElementById("modal");
+            let modalContent = modal.querySelector("div");
+
+            modalContent.classList.remove("modal-open"); 
+            setTimeout(() => {
+                modal.classList.add("hidden");
+            }, 300); // עיכוב לסגירה חלקה
+        }
+
+        // פונקציה לעדכון ה-ProgressBar
+        function updateProgressBar(amount) {
+            if (!idealAmount || idealAmount === 0) {
+                console.warn("⚠️ idealAmount לא הוגדר נכון!");
+                return;
+            }
+
+            const percentage = Math.max(0, Math.min(100, (amount / idealAmount) * 100)); // חישוב תקף בלבד
+            let color = "#4f46e5"; // ברירת מחדל (כחול)
+
+            if (amount < minAmount) {
+                color = "#ef4444"; // אדום
+            } else if (amount < (minAmount + idealAmount) / 2) {
+                color = "#f59e0b"; // כתום
+            } else {
+                color = "#10b981"; // ירוק
+            }
+
+            let progressBar = document.getElementById("circularProgress");
+            if (progressBar) {
+                progressBar.style.background = `conic-gradient(${color} ${percentage}%, #d1d5db ${percentage}%)`;
+            } else {
+                console.error("❌ לא נמצא אלמנט circularProgress!");
+            }
+        }
+
+
+        function updateModalValue(){
+            let newAmount = document.getElementById("inputCount").value; // קבלת הכמות החדשה מהקלט
+            if (newAmount < 0) {
+                window.alert("❌ הכמות לא יכולה להיות שלילית.");
+                return;
+            }
+
+            updateQuantity(catalogNumber, newAmount); // עדכון הכמות בשרת
+
+            document.getElementById("inputCount").value = newAmount; // עדכון הקלט
+            document.getElementById("stockCount").innerText = newAmount; // עדכון ה-ProgressBar
+            updateProgressBar(newAmount); // עדכון ה-ProgressBar
+            amount = newAmount; // עדכון הכמות המקומית
+
+            closeModal(); // סגירת החלון הצף
+        }
+
+        //set visibilty 
+        document.getElementById("view").style.visibility = "visible";
+        ///document.getElementById("E404").style.visibility = "hidden";
+
+        // פונקציה לעדכון כמות הברגים
+        function updateStock(amountChange) { 
+            let newAmount =  amount + amountChange; // חישוב הכמות החדשה
+
+            if (newAmount < 0) {
+                window.alert("❌ הכמות לא יכולה להיות שלילית.");
+                return;
+            }
+
+            updateQuantity(catalogNumber, newAmount); // עדכון הכמות בשרת
+
+            document.getElementById("inputCount").value = newAmount; // עדכון הקלט
+            document.getElementById("stockCount").innerText = newAmount; // עדכון ה-ProgressBar
+            updateProgressBar(newAmount); // עדכון ה-ProgressBar
+            amount = newAmount; // עדכון הכמות המקומית
+        }
+    
+        // פונקציות קריאת שרת
+
+        async function fetchBolt(catalogNum) {
+            let sku = catalogNum ? catalogNum.toString().trim() : '';  // המרת catalogNum למחרוזת אם הוא לא
+            if (!sku) {
+                window.alert("❌ יש להזין מספר קטלוגי.");
+                return;
+            }
+
+            try {
+                let response = await fetch(`${API_URL}?action=getBoltBySKU&sku=${sku}`);
+                if (!response.ok){ 
+                    throw new Error(`שגיאת שרת (${response.status})`);
+                }
+
+                let data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // החזר את הנתונים כאובייקט ולא כערכים בודדים
+                return {
+                    catalogNumber: data["Catalog Number"],
+                    description: data.Description,
+                    screwsAmount: data.Screws,
+                    idealAmount: data["Ideal Amount"],
+                    minAmount: data["Min Amount"],
+                    needToOrder: data["Need to Order"]
+                };
+            } catch (error) {
+                window.alert(`❌ שגיאה: ${error.message}`);
+                return null;
+            }
+        }
+
+        async function updateQuantity(catalogNum, quantity) {
+            let sku = catalogNum;
+            if (!sku) {
+                window.alert("❌ יש להזין מספר קטלוגי.")
+                return;
+            }
+            if (!quantity || isNaN(quantity)) {
+                window.alert("❌ הכנס כמות חוקית.");
+                return;
+            }
+
+            try {
+                let response = await fetch(`${API_URL}?action=updateBoltQuantity&sku=${sku}&quantity=${quantity}`);
+                if (!response.ok) throw new Error(`שגיאת שרת (${response.status})`);
+
+                let data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+            } catch (error) {
+                window.alert(`❌ שגיאה: ${error.message}`);
+            }
+        }
+
+        function clickUpdateNeedToOrder() { // קבלת מספר הקטלוג מהקלט
+            updateNeedToOrder(catalogNumber);
+            document.getElementById("setNeedToOrder").innerText = "הפריט סומן להזמנה"; 
+            document.getElementById("setNeedToOrder").style.color = "#eeeeee"; // שינוי צבע הכפתור
+        }
+
+        async function updateNeedToOrder(catalogNum) {
+            let sku =  catalogNum.trim();  // המרת catalogNum למחרוזת אם הוא לא
+            if (!sku) {
+                window.alert("❌ יש להזין מספר קטלוגי.");
+                return;
+            }
+
+            try {
+                let response = await fetch(`${API_URL}?action=updateNeedToOrder&sku=${sku}`);
+                if (!response.ok) throw new Error(`שגיאת שרת (${response.status})`);
+
+                let data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                window.alert(  `עודכן שיש להזמין פריט ${document.getElementById("DesTitle").innerText}`);
+            } catch (error) {
+                window.alert( `❌ שגיאה: ${error.message}`);
+            }
+
+        }
+
+
+    </script>
+</body>
+</html>
