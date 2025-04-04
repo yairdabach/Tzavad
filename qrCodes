@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>מחולל תוויות ברגים</title>
+  <!-- קישור לפונט Noto Sans Hebrew מגוגל פונט -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew&display=swap" rel="stylesheet">
+
+  <style>
+    /* עדכון הגדרת הפונט ל-Noto Sans Hebrew */
+    body {
+      font-family: 'Noto Sans Hebrew', sans-serif;
+      margin: 20px;
+      background-color: #f0f0f0;
+      direction: rtl;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .label {
+      width: 450px;
+      border: 2px solid black;
+      padding: 20px;
+      background-color: white;
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 20px;
+    }
+
+    .text-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+    }
+
+    .text-top {
+      text-align: right;
+    }
+
+    .text-top h1 {
+      font-family: 'Noto Sans Hebrew', sans-serif;
+      font-size: 1.8em;
+      margin: 0;
+      font-weight: normal;
+    }
+
+    .text-top p {
+      margin: 5px 0 0 0;
+      font-size: 1.1em;
+    }
+
+    .quantity {
+      text-align: right;
+      margin: 0;
+      font-size: 1em;
+      align-self: flex-start;
+    }
+
+    .qr-code {
+      width: 120px;
+      height: 120px;
+      border: 1px solid black;
+      background-color: #eee;
+      align-self: flex-end;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+</head>
+<body>
+<span id="loading" style="display: none;">טוען...</span>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbzgguV9ymiUBkxhmennGl1srf1jPP5jjUETXwFVPTO1NpKaZYVwT_fq0SOvZxaOlzvu/exec";
+
+  // פונקציה לשליפת נתונים
+  async function fetchAllBoltsData() {
+    try {
+      // שליחת בקשה ל- API
+      let response = await fetch(`${API_URL}`);
+
+      if (!response.ok) {
+        throw new Error(`שגיאת שרת (${response.status})`);
+      }
+
+      // המרת התשובה ל- JSON
+      let data = await response.json();
+
+      // בדיקה אם יש שגיאה בנתונים
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // הצגת כל הנתונים של Catalog Number, Description ו- Ideal Amount
+      const boltsData = data.map(bolt => ({
+        catalogNumber: bolt['Catalog Number'],
+        description: bolt['Description'],
+        idealAmount: bolt['Ideal Amount']
+      }));
+
+      document.getElementById('loading').style.display = 'none'; // הסתרת הודעת הטעינה
+
+      // יצירת תווית עבור כל ברג
+      boltsData.forEach(bolt => {
+        createLabel({
+          name: bolt.description, 
+          masach: bolt.catalogNumber, 
+          quantity: bolt.idealAmount
+        });
+      });
+
+      return boltsData; // החזרת כל הנתונים
+    } catch (error) {
+      alert(`❌ שגיאה: ${error.message}`);
+      return null;
+    }
+  }
+
+  // פונקציה ליצירת תווית
+  function createLabel({ name, masach, quantity }) {
+    const container = document.createElement('div');
+    container.className = 'label';
+
+    const textContainer = document.createElement('div');
+    textContainer.className = 'text-container';
+    textContainer.innerHTML = `
+    <div class="text-top">
+        <h1>${name}</h1>
+        <p>מסחא: ${masach}</p>
+    </div>
+    <p class="quantity">כמות ברגים: ${quantity}</p>
+    `;
+
+    const qrDiv = document.createElement('div');
+    qrDiv.className = 'qr-code';
+    const qr = new QRious({
+        element: document.createElement('canvas'),
+        value: "https://yairdabach.github.io/Tzavad/?cirlNumber="+masach,
+        size: 120
+    });
+    qrDiv.appendChild(qr.element);
+
+    container.appendChild(textContainer);
+    container.appendChild(qrDiv);
+
+    document.body.appendChild(container);
+  }
+
+  // קריאה לפונקציה כאשר הדף נטען
+  window.onload = fetchAllBoltsData;
+</script>
+
+</body>
+</html>
